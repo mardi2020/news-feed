@@ -1,0 +1,40 @@
+server:
+  port: 8000
+
+spring:
+  main:
+    web-application-type: reactive
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+      routes:
+        - id: feed-store
+          uri: lb://feed-store
+          predicates:
+            - Path=/feed-store/**
+            - Method=POST,OPTIONS,GET
+          filters:
+            - RewritePath=/feed-store/(?<segment>.*), /$\{segment}
+        - id: feed-send
+          uri: lb://feed-send
+          predicates:
+            - Path=/feed-send/**
+            - Method=POST,OPTIONS,GET
+          filters:
+            - RewritePath=/feed-send/(?<segment>.*), /$\{segment}
+  application:
+    name: feed-gateway
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
